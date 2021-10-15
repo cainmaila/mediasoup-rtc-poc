@@ -1,5 +1,5 @@
 <template>
-  <div class="poc">Poc {{ PEER_ID }}</div>
+  <div class="poc">{{ PEER_ID }}:{{ name }}</div>
 </template>
 <script>
 import protooClient from 'protoo-client'
@@ -13,7 +13,12 @@ const PC_PROPRIETARY_CONSTRAINTS = {
 export default {
   name: 'Poc',
   setup() {
-    const store = reactive({ recvTransport: null })
+    const store = reactive({
+      recvTransport: null,
+      name:
+        new URLSearchParams(new URL(window.location.href).search).get('name') ||
+        'No Name',
+    })
     const protooTransport = new protooClient.WebSocketTransport(SERVICE)
     const _protoo = new protooClient.Peer(protooTransport)
     _protoo.on('open', () => console.log('#open'))
@@ -151,7 +156,7 @@ export default {
         }
 
         const { peers } = await _protoo.request('join', {
-          displayName: 'Cain',
+          displayName: store.name,
           device: {},
           rtpCapabilities: _mediasoupDevice.rtpCapabilities,
           sctpCapabilities: _mediasoupDevice.sctpCapabilities,
@@ -164,6 +169,7 @@ export default {
 
     return {
       PEER_ID,
+      name: store.name,
     }
   },
 }
