@@ -1,25 +1,53 @@
 <template>
-  <div class="poc">Poc</div>
+  <div class="poc">Poc {{ PEER_ID }}</div>
 </template>
 <script>
 import protooClient from 'protoo-client'
 import * as mediasoupClient from 'mediasoup-client'
-import { onMounted } from 'vue'
-const SERVICE = 'wss://dev.webrtc.anchorgo.io:4443/?roomId=caintest&peerId=123'
+import { onMounted, reactive } from 'vue'
+const PEER_ID = ~~(Math.random() * 1000)
+const SERVICE = `wss://dev.webrtc.anchorgo.io:4443/?roomId=caintest&peerId=${PEER_ID}`
 const PC_PROPRIETARY_CONSTRAINTS = {
   optional: [{ googDscp: true }],
 }
 export default {
   name: 'Poc',
   setup() {
+    const store = reactive({ recvTransport: null })
     const protooTransport = new protooClient.WebSocketTransport(SERVICE)
     const _protoo = new protooClient.Peer(protooTransport)
     _protoo.on('open', () => console.log('#open'))
     _protoo.on('failed', () => console.log('#failed'))
     _protoo.on('disconnected', () => console.log('#disconnected'))
     _protoo.on('close', () => console.log('#close'))
-    _protoo.on('request', (request, accept, reject) => {
-      console.log('#request', request.method, accept, reject)
+    // _protoo.on('request', async (request, accept, reject) => {
+    _protoo.on('request', async request => {
+      // console.log('#request', request.method, accept, reject)
+      console.log('#request')
+      const {
+        peerId, // NOTE: Null if bot.
+        dataProducerId,
+        id,
+        sctpStreamParameters,
+        label,
+        protocol,
+        appData,
+      } = request.data
+      const dataConsumer = await store.recvTransport.consumeData({
+        id,
+        dataProducerId,
+        sctpStreamParameters,
+        label,
+        protocol,
+        appData: { ...appData, peerId }, // Trick.
+      })
+      dataConsumer.on('transportclose', () =>
+        console.log('#dataConsumer_transportclose'),
+      )
+      dataConsumer.on('open', () => console.log('#dataConsumer_open'))
+      dataConsumer.on('close', () => console.log('#dataConsumer_close'))
+      dataConsumer.on('error', () => console.log('#dataConsumer_error'))
+      dataConsumer.on('message', () => console.log('#dataConsumer_message'))
     })
     _protoo.on('notification', () => console.log('#notification'))
 
@@ -102,6 +130,7 @@ export default {
             sctpParameters,
             iceServers: [],
           })
+          store.recvTransport = _recvTransport
           _recvTransport.on(
             'connect',
             (
@@ -132,6 +161,10 @@ export default {
         console.error('#error', e)
       }
     })
+
+    return {
+      PEER_ID,
+    }
   },
 }
 
