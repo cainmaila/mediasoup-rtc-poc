@@ -1,10 +1,15 @@
 <template>
-  <div class="poc">{{ PEER_ID }}:{{ name }}</div>
+  <div class="poc">
+    <div>{{ PEER_ID }}:{{ store.name }}</div>
+    <hr />
+    <div v-for="user in store.users" :key="user.id">{{ user.displayName }}</div>
+  </div>
 </template>
 <script>
 import protooClient from 'protoo-client'
 import * as mediasoupClient from 'mediasoup-client'
 import { onMounted, reactive } from 'vue'
+import Lazy from 'lazy.js'
 const PEER_ID = ~~(Math.random() * 1000)
 const SERVICE = `wss://dev.webrtc.anchorgo.io:4443/?roomId=caintest&peerId=${PEER_ID}`
 const PC_PROPRIETARY_CONSTRAINTS = {
@@ -18,6 +23,7 @@ export default {
       name:
         new URLSearchParams(new URL(window.location.href).search).get('name') ||
         'No Name',
+      users: null,
     })
     const protooTransport = new protooClient.WebSocketTransport(SERVICE)
     const _protoo = new protooClient.Peer(protooTransport)
@@ -54,7 +60,22 @@ export default {
       dataConsumer.on('error', () => console.log('#dataConsumer_error'))
       dataConsumer.on('message', () => console.log('#dataConsumer_message'))
     })
-    _protoo.on('notification', () => console.log('#notification'))
+    _protoo.on('notification', notification => {
+      console.log('#notification', notification)
+      switch (notification.method) {
+        case 'newPeer':
+          store.users.push(notification.data)
+          break
+        case 'peerClosed':
+          store.users =
+            Lazy(store.users)
+              .filter(user => {
+                return user.id != notification.data.peerId
+              })
+              .toArray() || []
+          break
+      }
+    })
 
     onMounted(async () => {
       await delay(1000)
@@ -162,6 +183,7 @@ export default {
           sctpCapabilities: _mediasoupDevice.sctpCapabilities,
         })
         console.log('#peers', peers)
+        store.users = peers
       } catch (e) {
         console.error('#error', e)
       }
@@ -169,7 +191,7 @@ export default {
 
     return {
       PEER_ID,
-      name: store.name,
+      store,
     }
   },
 }

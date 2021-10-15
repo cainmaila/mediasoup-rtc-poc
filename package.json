@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "core-js": "^3.6.5",
+    "lazy.js": "^0.5.1",
     "mediasoup-client": "^3.6.43",
     "protoo-client": "^4.0.6",
     "vue": "^3.0.0"

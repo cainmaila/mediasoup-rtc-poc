@@ -4693,6 +4693,10 @@ launch-editor@^2.2.1:
     chalk "^2.3.0"
     shell-quote "^1.6.1"
 
+lazy.js@^0.5.1:
+  version "0.5.1"
+  resolved "https://registry.yarnpkg.com/lazy.js/-/lazy.js-0.5.1.tgz#9f05c27f42c66ae7f41814c9674d105efcbc432f"
+
 levn@^0.3.0, levn@~0.3.0:
   version "0.3.0"
   resolved "https://registry.nlark.com/levn/download/levn-0.3.0.tgz#3b09924edf9f083c0490fdd4c0bc4421e04764ee"
